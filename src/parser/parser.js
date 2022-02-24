@@ -7,36 +7,36 @@ const convertFileVector = async function convertFileVector() {
     try {
         layers.map(async (parentLayer, index) => {
             if (parentLayer.type === 'groupLayer') {
+                const vectors = [];
 
-                const childLayers = await layers.map((layerParent) => {
-                    if (layerParent.type === 'groupLayer') {
-                        return layerParent.layers
+                const childLayers = await layers.map((child) => {
+                    if (child.type === 'groupLayer') {
+                        return child.layers
                     }
                 })
 
-                let currentData = childLayers.flatMap((a) => {
+                let allLayers = childLayers.flatMap((a) => {
                     return a
                 });
 
-                currentData = currentData.map((e) => {
+                // filter only vectors
+                allLayers.map((e) => {
                     if (e.type === 'shapeLayer') {
                         console.log('vector')
+                        vectors.push(e)
                         return e
                     } else {
-                        console.log('normal parse process')
                         console.log('text or image ')
                     }
                 })
 
-                const exportFile = await new SvgExporter().exportSvg(currentData, {
-                    viewBoxBounds: {
-                        left: data.bounds.left,
-                        top: data.bounds.top,
-                        width: data.bounds.width,
-                        height: data.bounds.height,
-                    }
+                // map and create svg
+                vectors.map(async (x, i) => {
+                    const exportFile = await new SvgExporter().exportSvg([vectors[i]], {
+                        viewBoxBounds: vectors[i].clipBounds ? vectors[i].clipBounds : data.bounds
+                    })
+                    await fs.writeFileSync(`./src/parser/svg/${i}.svg`, exportFile);
                 })
-                await fs.writeFileSync(`./src/parser/svg/${Math.round((new Date()).getTime() / 1000)}.svg`, exportFile);
 
             } else if (parentLayer.type === 'shapeLayer') {
                 const exportFile = await new SvgExporter().exportSvg(parentLayer, {
