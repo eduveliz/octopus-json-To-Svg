@@ -1,0 +1,29 @@
+{
+  "name": "jsontosvg",
+  "version": "1.0.0",
+  "description": "octopus json to svg",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/parser/parser.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eduveliz/jsonToSvg.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/eduveliz/jsonToSvg/issues"
+  },
+  "homepage": "https://github.com/eduveliz/jsonToSvg#readme",
+  "devDependencies": {
+    "@avocode/cancel-token": "^1.4.2",
+    "canvas": "^2.9.0"
+  },
+  "dependencies": {
+    "@avocode/svg-exporter": "^1.2.32",
+    "image-type": "^4.1.0",
+    "svgdom": "^0.1.10"
+  }
+}
