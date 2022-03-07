@@ -1,13 +1,82 @@
 const fs = require("fs")
 const data = require('../json/12345ai.json')
 const SvgExporter = require("../svg-exporter/svg-exporter");
+const TextToSVG = require("../text-svg/text-svg");
+const textToSVG = TextToSVG.loadSync();
 
 const convertFileVector = async function convertFileVector() {
+
     const layers = data.layers;
+
+    function componentToHex(c) {
+        const hex = c.toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+    }
+
+    function rgbToHex(text) {
+        return "#" + componentToHex(text.styles[0].color.r) + componentToHex(text.styles[0].color.g) + componentToHex(text.styles[0].color.b);
+    }
+
+    function vectorToSvg(vectors, data) {
+        // creating svg for vectors
+        vectors.map(async (x, i) => {
+            const exportFile = await new SvgExporter().exportSvg([vectors[i]], {
+                viewBoxBounds: vectors[i].clipBounds ? vectors[i].clipBounds : data.bounds
+            })
+            await fs.writeFileSync(`./src/parser/svg/vectors/${i}.svg`, exportFile);
+        })
+    }
+
+    async function textToSvgs(textLayers, data) {
+        // create one for text
+        textLayers.map(async (textLayer, i) => {
+            const transform = `translate(${textLayer.text.transformMatrix.tx},${textLayer.text.transformMatrix.ty})`
+            const attributes = {fill: rgbToHex(textLayer.text), stroke: 'transparent', transform: transform,};
+            const options = {
+                x: textLayer.texts.transformMatrix.a,
+                y: textLayer.texts.transformMatrix.d,
+                fontSize: textLayer.texts.styles[0].font.size,
+                anchor: 'top',
+                attributes: attributes,
+                letterSpacing: textLayer.texts.styles[0].font.letterSpacing,
+                width: data.bounds.width,
+                height: data.bounds.height
+            };
+
+            const svg = textToSVG.getSVG(textLayer.texts.value, options);
+            await fs.writeFileSync(`./src/parser/svg/texts/${i}.svg`, svg);
+        })
+    }
+
+    async function textToSvg(textLayers, data) {
+        // all texts in one svg
+        let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${data.bounds.width}" height="${data.bounds.height}">`;
+        textLayers.map(async (textLayer, i) => {
+            const transform = `translate(${textLayer.text.transformMatrix.tx},${textLayer.text.transformMatrix.ty})`
+            const attributes = {fill: rgbToHex(textLayer.text), stroke: 'transparent', transform: transform,};
+            const options = {
+                x: textLayer.text.transformMatrix.a,
+                y: textLayer.text.transformMatrix.d,
+                fontSize: textLayer.text.styles[0].font.size,
+                anchor: 'top middle',
+                attributes: attributes,
+                letterSpacing: textLayer.text.styles[0].font.letterSpacing,
+                width: data.bounds.width,
+                height: data.bounds.height
+            };
+            svg += textToSVG.getPath(textLayer.text.value, options);
+        })
+        svg += '</svg>'
+
+        await fs.writeFileSync(`./src/parser/svg/text/text.svg`, svg);
+        console.log('svg texts complete')
+    }
+
     try {
         layers.map(async (parentLayer, index) => {
             if (parentLayer.type === 'groupLayer') {
-                const vectors = [];
+                const vectors = []
+                const textLayers = []
 
                 const childLayers = await layers.map((child) => {
                     if (child.type === 'groupLayer') {
@@ -15,28 +84,24 @@ const convertFileVector = async function convertFileVector() {
                     }
                 })
 
-                let allLayers = childLayers.flatMap((a) => {
+                let allLayers = await childLayers.flatMap((a) => {
                     return a
                 });
 
                 // filter only vectors
-                allLayers.map((e) => {
+                allLayers = allLayers.map((e) => {
                     if (e.type === 'shapeLayer') {
-                        console.log('vector')
                         vectors.push(e)
                         return e
                     } else {
-                        console.log('text or image ')
+                        if (e.type === 'textLayer' && e.visible === true) {
+                            textLayers.push(e)
+                        }
                     }
                 })
 
-                // map and create svg
-                vectors.map(async (x, i) => {
-                    const exportFile = await new SvgExporter().exportSvg([vectors[i]], {
-                        viewBoxBounds: vectors[i].clipBounds ? vectors[i].clipBounds : data.bounds
-                    })
-                    await fs.writeFileSync(`./src/parser/svg/${i}.svg`, exportFile);
-                })
+                await vectorToSvg(vectors, data)
+                await textToSvg(textLayers, data) // or textToSvgs for multiples svgs
 
             } else if (parentLayer.type === 'shapeLayer') {
                 const exportFile = await new SvgExporter().exportSvg(parentLayer, {
