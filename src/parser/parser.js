@@ -33,17 +33,17 @@ const convertFileVector = async function convertFileVector() {
             const transform = `translate(${textLayer.text.transformMatrix.tx},${textLayer.text.transformMatrix.ty})`
             const attributes = {fill: rgbToHex(textLayer.text), stroke: 'transparent', transform: transform,};
             const options = {
-                x: textLayer.texts.transformMatrix.a,
-                y: textLayer.texts.transformMatrix.d,
-                fontSize: textLayer.texts.styles[0].font.size,
+                x: textLayer.text.transformMatrix.a,
+                y: textLayer.text.transformMatrix.d,
+                fontSize: textLayer.text.styles[0].font.size,
                 anchor: 'top',
                 attributes: attributes,
-                letterSpacing: textLayer.texts.styles[0].font.letterSpacing,
+                letterSpacing: textLayer.text.styles[0].font.letterSpacing,
                 width: data.bounds.width,
                 height: data.bounds.height
             };
 
-            const svg = textToSVG.getSVG(textLayer.texts.value, options);
+            const svg = textToSVG.getSVG(textLayer.text.value, options);
             await fs.writeFileSync(`./src/parser/svg/texts/${i}.svg`, svg);
         })
     }
@@ -100,8 +100,9 @@ const convertFileVector = async function convertFileVector() {
                     }
                 })
 
-                await vectorToSvg(vectors, data)
-                await textToSvg(textLayers, data) // or textToSvgs for multiples svgs
+                // await vectorToSvg(vectors, data)
+                // await textToSvg(textLayers, data) // or textToSvgs for multiples svgs
+                await textToSvgs(textLayers, data) // or textToSvgs for multiples svgs
 
             } else if (parentLayer.type === 'shapeLayer') {
                 const exportFile = await new SvgExporter().exportSvg(parentLayer, {
