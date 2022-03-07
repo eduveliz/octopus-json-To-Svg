@@ -100,9 +100,9 @@ const convertFileVector = async function convertFileVector() {
                     }
                 })
 
-                // await vectorToSvg(vectors, data)
-                // await textToSvg(textLayers, data) // or textToSvgs for multiples svgs
-                await textToSvgs(textLayers, data) // or textToSvgs for multiples svgs
+                await vectorToSvg(vectors, data)
+                await textToSvg(textLayers, data)
+                await textToSvgs(textLayers, data)
 
             } else if (parentLayer.type === 'shapeLayer') {
                 const exportFile = await new SvgExporter().exportSvg(parentLayer, {
